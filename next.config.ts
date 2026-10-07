@@ -1,11 +1,8 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // Ignora erros de tipagem e de variáveis não usadas durante o deploy na Vercel
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
 };
 
