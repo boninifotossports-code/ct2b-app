@@ -1,23 +1,39 @@
-'use client';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import NavbarPrincipal from "../components/layout/Navbar"; // <-- AQUI: "Navbar" com N maiúsculo!
 
-import React, { useState } from 'react';
-import './globals.css';
-import { Navbar } from '@/components/layout/Navbar';
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "CT 2B - Gestão Esportiva",
+  description: "Plataforma de gestão do Centro de Treinamento 2B - Desenvolvido por AB Labs",
+};
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [role, setRole] = useState<'coach' | 'guardian'>('coach');
-
   return (
     <html lang="pt-BR">
-      <body className="min-h-screen bg-ct2b-bg text-ct2b-text antialiased selection:bg-ct2b-orange selection:text-white">
-        <Navbar currentRole={role} onRoleToggle={setRole} />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <body className={`${inter.className} bg-gray-950 text-white min-h-screen flex flex-col`}>
+        
+        {/* CABEÇALHO SEPARADO: Controla a sua própria visibilidade */}
+        <NavbarPrincipal />
+
+        {/* CONTEÚDO PRINCIPAL */}
+        <main className="flex-grow max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
           {children}
         </main>
+
+        {/* RODAPÉ AB LABS */}
+        <footer className="bg-gray-900 border-t border-gray-800 p-6 text-center mt-auto">
+          <p className="text-sm text-gray-500 font-medium">
+            Desenvolvido por <span className="text-orange-500 font-bold tracking-wider">AB Labs</span>
+          </p>
+        </footer>
+
       </body>
     </html>
   );

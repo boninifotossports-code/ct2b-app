@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ======================================================
+// 1. BIBLIOTECA DE EXERCÍCIOS E PLANOS
+// ======================================================
+model Exercicio {
+  id                String   @id @default(cuid())
+  title             String
+  time              String
+  players           String
+  space             String
+  specificObjective String
+  description       String
+  image             String
+  createdAt         DateTime @default(now())
+}
+
+model PlanoTreino {
+  id                   String              @id @default(cuid())
+  numeroPlano          Int                 @unique
+  data                 String
+  hora                 String
+  microciclo           String
+  mesociclo            String
+  periodo              String
+  clima                String
+  volume               String
+  jogadores            String
+  material             String
+  objetivosGerais      String
+  objetivosEspecificos String
+  observacoes          String
+  atividades           Json
+  createdAt            DateTime            @default(now())
+
+  presencas            Presenca[]
+  feedbacks            Feedback[]
+  agendamentos         AgendamentoTreino[]
+}
+
+// ======================================================
+// 2. USUÁRIOS E ATLETAS
+// ======================================================
+model Usuario {
+  id             String    @id @default(cuid())
+  nome           String
+  usuario        String    @unique
+  senha          String
+  role           String
+  telefone       String?
+  primeiroAcesso Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  atletas        Atleta[] 
+}
+
+model Atleta {
+  id             String              @id @default(cuid())
+  nomeCompleto   String
+  categoria      String
+  posicao        String?
+  fotoUrl        String?
+  dataNascimento String?
+  ativo          Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+
+  responsavelId  String?
+  responsavel    Usuario?            @relation(fields: [responsavelId], references: [id])
+
+  presencas      Presenca[]
+  feedbacks      Feedback[]
+  recados        Recado[]
+  confirmacoes   ConfirmacaoTreino[]
+}
+
+// ======================================================
+// 3. AGENDAMENTO DE TREINOS & CONFIRMAÇÃO DE VAGAS
+// ======================================================
+model AgendamentoTreino {
+  id                 String              @id @default(cuid())
+  titulo             String              @default("Treino CT 2B")
+  categoria          String
+  data               String
+  hora               String
+  local              String
+  vagasTotais        Int                 @default(12)
+  bloqueado          Boolean             @default(false)
+  professorConvidado String?
+
+  recorrente         Boolean             @default(false)
+  diaSemana          Int?
+  grupoRecorrenciaId String?
+
+  planoTreinoId      String?
+  planoTreino        PlanoTreino?        @relation(fields: [planoTreinoId], references: [id])
+
+  createdAt          DateTime            @default(now())
+  confirmacoes       ConfirmacaoTreino[]
+  feedbacks          Feedback[]
+  presencas          Presenca[]
+}
+
+model ConfirmacaoTreino {
+  id        String            @id @default(cuid())
+  status    String            @default("CONFIRMADO")
+  createdAt DateTime          @default(now())
+
+  treinoId  String
+  treino    AgendamentoTreino @relation(fields: [treinoId], references: [id], onDelete: Cascade)
+
+  atletaId  String
+  atleta    Atleta            @relation(fields: [atletaId], references: [id], onDelete: Cascade)
+
+  @@unique([treinoId, atletaId])
+}
+
+// ======================================================
+// 4. FEEDBACKS, CHAMADA E RECADOS
+// ======================================================
+model Feedback {
+  id            String             @id @default(cuid())
+  tipo          String             @default("INDIVIDUAL")
+  nota          Int?
+  tags          String?
+  comentario    String
+  data          DateTime           @default(now())
+
+  atletaId      String?
+  atleta        Atleta?            @relation(fields: [atletaId], references: [id], onDelete: Cascade)
+
+  treinoId      String?
+  treino        AgendamentoTreino? @relation(fields: [treinoId], references: [id], onDelete: Cascade)
+
+  planoTreinoId String?
+  planoTreino   PlanoTreino?       @relation(fields: [planoTreinoId], references: [id], onDelete: Cascade)
+}
+
+model Presenca {
+  id            String             @id @default(cuid())
+  status        String             // "PRESENTE", "FALTA", "JUSTIFICADA"
+  data          DateTime           @default(now())
+
+  atletaId      String
+  atleta        Atleta             @relation(fields: [atletaId], references: [id], onDelete: Cascade)
+
+  treinoId      String?
+  treino        AgendamentoTreino? @relation(fields: [treinoId], references: [id], onDelete: Cascade)
+
+  planoTreinoId String?
+  planoTreino   PlanoTreino?       @relation(fields: [planoTreinoId], references: [id], onDelete: Cascade)
+
+  @@unique([treinoId, atletaId])
+}
+
+model Recado {
+  id        String   @id @default(cuid())
+  tipo      String
+  titulo    String
+  mensagem  String
+  createdAt DateTime @default(now())
+  atletaId  String?
+  atleta    Atleta?  @relation(fields: [atletaId], references: [id])
+}

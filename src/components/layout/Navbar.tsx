@@ -1,180 +1,326 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { 
-  Menu, 
-  X, 
-  Dumbbell, 
-  Users, 
-  Video, 
-  FileText, 
-  UserSquare, 
-  History, 
-  CalendarCheck 
-} from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 
-interface NavbarProps {
-  currentRole: 'coach' | 'guardian';
-  onRoleToggle: (role: 'coach' | 'guardian') => void;
-}
-
-export function Navbar({ currentRole, onRoleToggle }: NavbarProps) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+export default function NavbarPrincipal() {
   const pathname = usePathname();
+  const router = useRouter();
 
-  // Links específicos para o Treinador
-  const coachLinks = [
-    { name: 'Chamada', href: '/chamada', icon: Users },
-    { name: 'Montador', href: '/treinos', icon: Dumbbell },
-    { name: 'Acervo', href: '/videos', icon: Video },
-    { name: 'Boletins', href: '/feedback', icon: FileText },
+  const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+  const [dropdownTreinosAberto, setDropdownTreinosAberto] = useState(false);
+  const [accordionTreinosMobile, setAccordionTreinosMobile] = useState(true);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  if (
+    !pathname ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/trocar-senha") ||
+    pathname.startsWith("/portal-pais")
+  ) {
+    return null;
+  }
+
+  const subitensTreinos = [
+    {
+      nome: "Planeamento",
+      descricao: "Montador e prancheta tática em PDF",
+      rota: "/treinos/planeamento",
+      icone: "📝",
+    },
+    {
+      nome: "Planos Salvos",
+      descricao: "Histórico e biblioteca de treinos",
+      rota: "/planos",
+      icone: "📁",
+    },
+    {
+      nome: "Agendamento",
+      descricao: "Calendário e controlo de vagas",
+      rota: "/agenda",
+      icone: "📅",
+    },
   ];
 
-  // Links específicos para a Família
-  const guardianLinks = [
-    { name: 'Visão Geral', href: '/meu-atleta', icon: UserSquare },
-    { name: 'Presença', href: '/presenca', icon: CalendarCheck },
-    { name: 'Histórico', href: '/treinos-feitos', icon: History },
-  ];
+  const rotaTreinoAtiva = subitensTreinos.some((sub) =>
+    pathname.startsWith(sub.rota)
+  );
 
-  const activeLinks = currentRole === 'coach' ? coachLinks : guardianLinks;
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownTreinosAberto(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    document.cookie = "ct2b_session=; path=/; max-age=0;";
+    localStorage.removeItem("ct2b_user");
+    router.push("/login");
+  };
 
   return (
-    <nav className="bg-ct2b-surface border-b border-ct2b-border sticky top-0 z-50 shadow-md">
+    <header className="sticky top-0 z-50 bg-gray-950/85 backdrop-blur-xl border-b border-gray-800/80 shadow-2xl transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          
-          {/* Lado Esquerdo: Logo e Menu Desktop */}
-          <div className="flex items-center">
-            {/* Logo CT 2B */}
-            <div className="flex-shrink-0 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-black border-2 border-ct2b-orange flex items-center justify-center font-black text-ct2b-orange text-lg">
-                2B
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-white font-black text-sm block uppercase tracking-wider">Centro de Treinamento</span>
-                <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">by AB Labs</span>
-              </div>
-            </div>
+        <div className="flex items-center justify-between h-20">
 
-            {/* Links Desktop */}
-            <div className="hidden sm:ml-8 sm:flex sm:space-x-2">
-              {activeLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = pathname === link.href;
-                
-                return (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-ct2b-orange text-white shadow-md shadow-ct2b-orange/20'
-                        : 'text-zinc-400 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {link.name}
-                  </Link>
-                );
-              })}
+          <Link href="/" className="flex items-center gap-3 shrink-0 focus:outline-none">
+            <div className="h-14 sm:h-16 flex items-center justify-center p-1 rounded-2xl bg-gray-900/60 border border-gray-800/60 shadow-inner hover:border-orange-500/40 transition-all">
+              <img
+                src="/topo-logo.png"
+                alt="Centro de Treinamento 2B"
+                className="h-full w-auto object-contain drop-shadow-md hover:scale-105 transition-transform"
+              />
             </div>
-          </div>
+          </Link>
 
-          {/* Lado Direito: Alternador de Perfil */}
-          <div className="hidden sm:flex sm:items-center">
-            <div className="flex bg-ct2b-bg p-1 rounded-xl border border-ct2b-border">
-              <button
-                onClick={() => onRoleToggle('coach')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  currentRole === 'coach'
-                    ? 'bg-ct2b-border text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                Treinador
-              </button>
-              <button
-                onClick={() => onRoleToggle('guardian')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                  currentRole === 'guardian'
-                    ? 'bg-ct2b-border text-white shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                Família
-              </button>
-            </div>
-          </div>
-
-          {/* Botão Menu Mobile */}
-          <div className="flex items-center sm:hidden">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-white/5 focus:outline-none"
+          <nav className="hidden lg:flex items-center gap-1.5 bg-gray-900/80 border border-gray-800/80 p-1.5 rounded-2xl shadow-inner backdrop-blur-md">
+            <Link
+              href="/"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+                pathname === "/"
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/60"
+              }`}
             >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              <span className="text-sm">📊</span>
+              Dashboard
+            </Link>
+
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setDropdownTreinosAberto(!dropdownTreinosAberto)}
+                onMouseEnter={() => setDropdownTreinosAberto(true)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs uppercase tracking-wider font-bold transition-all focus:outline-none ${
+                  rotaTreinoAtiva || dropdownTreinosAberto
+                    ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                    : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/60"
+                }`}
+              >
+                <span className="text-sm">⚽</span>
+                <span>Treinos</span>
+                <svg
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    dropdownTreinosAberto ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {dropdownTreinosAberto && (
+                <div
+                  onMouseLeave={() => setDropdownTreinosAberto(false)}
+                  className="absolute left-0 mt-2 w-64 rounded-2xl bg-gray-900/95 border border-gray-800 shadow-2xl backdrop-blur-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                >
+                  <div className="px-3 py-1.5 text-[10px] uppercase font-bold tracking-wider text-gray-500 border-b border-gray-800/80 mb-1">
+                    Gestão de Treinos
+                  </div>
+                  {subitensTreinos.map((sub) => {
+                    const ativo = pathname.startsWith(sub.rota);
+                    return (
+                      <Link
+                        key={sub.rota}
+                        href={sub.rota}
+                        onClick={() => setDropdownTreinosAberto(false)}
+                        className={`flex items-start gap-3 p-2.5 rounded-xl transition-all ${
+                          ativo
+                            ? "bg-orange-600/15 border border-orange-500/30 text-white"
+                            : "hover:bg-gray-800/70 text-gray-300 hover:text-white"
+                        }`}
+                      >
+                        <span className="text-xl p-1 bg-gray-800/80 rounded-lg border border-gray-700/50">
+                          {sub.icone}
+                        </span>
+                        <div>
+                          <div className={`text-xs font-bold ${ativo ? "text-orange-400" : "text-white"}`}>
+                            {sub.nome}
+                          </div>
+                          <div className="text-[11px] text-gray-400 leading-tight mt-0.5">
+                            {sub.descricao}
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <Link
+              href="/presenca"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+                pathname.startsWith("/presenca")
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/60"
+              }`}
+            >
+              <span className="text-sm">✅</span>
+              Chamada
+            </Link>
+
+            <Link
+              href="/atletas"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+                pathname.startsWith("/atletas")
+                  ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/60"
+              }`}
+            >
+              <span className="text-sm">👥</span>
+              Cadastros
+            </Link>
+          </nav>
+
+          <div className="hidden lg:flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Comissão Técnica
+            </div>
+
+            <button
+              onClick={handleLogout}
+              title="Terminar Sessão"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Sair</span>
             </button>
           </div>
+
+          <div className="flex lg:hidden items-center gap-3">
+            <button
+              onClick={() => setMenuMobileAberto(!menuMobileAberto)}
+              aria-label="Abrir menu"
+              className="p-2.5 rounded-xl bg-gray-900 border border-gray-800 text-gray-300 hover:text-white hover:border-orange-500 transition-all focus:outline-none"
+            >
+              <svg className="w-6 h-6 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {menuMobileAberto ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
+
         </div>
       </div>
 
-      {/* Menu Mobile Expandido */}
-      {isMobileMenuOpen && (
-        <div className="sm:hidden bg-ct2b-surface border-b border-ct2b-border">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {activeLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = pathname === link.href;
+      {menuMobileAberto && (
+        <div className="lg:hidden border-t border-gray-800 bg-gray-950/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-2 animate-in fade-in slide-in-from-top-4 duration-200">
+          <Link
+            href="/"
+            onClick={() => setMenuMobileAberto(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+              pathname === "/"
+                ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                : "text-gray-300 bg-gray-900/60 hover:bg-gray-900 hover:text-white border border-gray-800/60"
+            }`}
+          >
+            <span className="text-base">📊</span>
+            Dashboard
+          </Link>
 
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all ${
-                    isActive
-                      ? 'bg-ct2b-orange text-white'
-                      : 'text-zinc-400 hover:bg-white/5 hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {link.name}
-                </Link>
-              );
-            })}
+          <div className="bg-gray-900/60 border border-gray-800/80 rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setAccordionTreinosMobile(!accordionTreinosMobile)}
+              className="w-full flex items-center justify-between px-4 py-3 text-xs uppercase tracking-wider font-bold text-white focus:outline-none"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-base">⚽</span>
+                <span>Treinos</span>
+                {rotaTreinoAtiva && <span className="w-2 h-2 rounded-full bg-orange-500"></span>}
+              </div>
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform ${accordionTreinosMobile ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {accordionTreinosMobile && (
+              <div className="px-3 pb-3 space-y-1.5 border-t border-gray-800/60 pt-2">
+                {subitensTreinos.map((sub) => {
+                  const ativo = pathname.startsWith(sub.rota);
+                  return (
+                    <Link
+                      key={sub.rota}
+                      href={sub.rota}
+                      onClick={() => setMenuMobileAberto(false)}
+                      className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                        ativo
+                          ? "bg-orange-600 text-white shadow-md shadow-orange-600/25"
+                          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-sm">{sub.icone}</span>
+                      <span>{sub.nome}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Alternador de Perfil Mobile */}
-          <div className="px-4 py-4 border-t border-ct2b-border bg-ct2b-bg/50">
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Visão Ativa:</p>
-            <div className="flex bg-ct2b-surface p-1 rounded-xl border border-ct2b-border">
-              <button
-                onClick={() => { onRoleToggle('coach'); setIsMobileMenuOpen(false); }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                  currentRole === 'coach'
-                    ? 'bg-ct2b-border text-white shadow-sm'
-                    : 'text-zinc-500'
-                }`}
-              >
-                Treinador
-              </button>
-              <button
-                onClick={() => { onRoleToggle('guardian'); setIsMobileMenuOpen(false); }}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                  currentRole === 'guardian'
-                    ? 'bg-ct2b-border text-white shadow-sm'
-                    : 'text-zinc-500'
-                }`}
-              >
-                Família
-              </button>
-            </div>
+          <Link
+            href="/presenca"
+            onClick={() => setMenuMobileAberto(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+              pathname.startsWith("/presenca")
+                ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                : "text-gray-300 bg-gray-900/60 hover:bg-gray-900 hover:text-white border border-gray-800/60"
+            }`}
+          >
+            <span className="text-base">✅</span>
+            Chamada
+          </Link>
+
+          <Link
+            href="/atletas"
+            onClick={() => setMenuMobileAberto(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all ${
+              pathname.startsWith("/atletas")
+                ? "bg-orange-600 text-white shadow-lg shadow-orange-600/30"
+                : "text-gray-300 bg-gray-900/60 hover:bg-gray-900 hover:text-white border border-gray-800/60"
+            }`}
+          >
+            <span className="text-base">👥</span>
+            Cadastros
+          </Link>
+
+          <div className="pt-3 border-t border-gray-800/80">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-bold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Terminar Sessão
+            </button>
           </div>
         </div>
       )}
-    </nav>
+    </header>
   );
 }

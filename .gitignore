@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
+.env*
+# Configurações locais de assistentes/editores
+.agents/
+.claude/
+.cursor/
+.devin/
