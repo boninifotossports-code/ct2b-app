@@ -5,19 +5,24 @@ export default async function HomePage() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("ct2b_session");
 
-  if (!sessionCookie) {
+  // Se não tem cookie, manda para o login
+  if (!sessionCookie || !sessionCookie.value) {
     redirect("/login");
   }
 
   try {
     const session = JSON.parse(sessionCookie.value);
+
     if (session.role === "RESPONSAVEL") {
       redirect("/portal-pais");
+    }
+
+    if (session.role === "PROFESSOR") {
+      redirect("/presenca");
     }
   } catch {
     redirect("/login");
   }
 
-  // Se for professor/comissão técnica autenticado, segue para a página inicial pretendida:
-  redirect("/presenca");
+  redirect("/login");
 }
