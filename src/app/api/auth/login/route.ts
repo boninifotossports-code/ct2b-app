@@ -9,55 +9,50 @@ function hashSenha(senha: string) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const identificador = (body.usuario || body.email || "").toString().trim();
+    const loginDigitado = (body.usuario || body.email || "").toString().trim();
     const senha = (body.senha || "").toString();
 
-    if (!identificador || !senha) {
+    if (!loginDigitado || !senha) {
       return NextResponse.json(
-        { error: "Informe utilizador/email e palavra-passe." },
+        { error: "Informe o utilizador e a palavra-passe." },
         { status: 400 }
       );
     }
 
-    // Busca direta sem 'include' para não estourar erro se a relação não existir
-    // Procura por email ou username/nome
+    // Busca pelo campo 'usuario' ou 'nome' de acordo com o schema
     const user = await prisma.usuario.findFirst({
       where: {
         OR: [
-          { email: { equals: identificador, mode: "insensitive" } },
-          // caso o campo no seu schema seja 'nome' ou 'usuario'
-          { nome: { equals: identificador, mode: "insensitive" } },
+          { usuario: { equals: loginDigitado, mode: "insensitive" } },
+          { nome: { equals: loginDigitado, mode: "insensitive" } },
         ],
       },
     });
 
     if (!user) {
       return NextResponse.json(
-        { error: "Credenciais inválidas." },
+        { error: "Utilizador não encontrado." },
         { status: 401 }
       );
     }
 
-    // Validação flexível: texto puro ou SHA-256
-    const senhaCorreta =
+    // Valida texto puro ou hash SHA-256
+    const senhaValida =
       user.senha === senha || user.senha === hashSenha(senha);
 
-    if (!senhaCorreta) {
+    if (!senhaValida) {
       return NextResponse.json(
-        { error: "Credenciais inválidas." },
+        { error: "Palavra-passe incorreta." },
         { status: 401 }
       );
     }
 
-    // Extrai o papel (role ou tipo) de forma segura
-    const anyUser = user as any;
-    const rawRole = anyUser.role || anyUser.tipo || anyUser.perfil || "ADMIN";
-    const role = String(rawRole).toUpperCase();
+    const role = (user.role || "ADMIN").toUpperCase();
 
     const dadosSessao = {
       id: user.id,
       nome: user.nome,
-      email: user.email,
+      usuario: user.usuario,
       role: role,
     };
 
@@ -78,9 +73,9 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error: any) {
-    console.error("Erro detalhado no login:", error);
+    console.error("Erro no login:", error);
     return NextResponse.json(
-      { error: `Erro no servidor: ${error?.message || "Falha ao consultar banco"}` },
+      { error: `Erro no servidor: ${error?.message || "Falha interna"}` },
       { status: 500 }
     );
   }
