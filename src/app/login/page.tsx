@@ -33,20 +33,20 @@ export default function LoginPage() {
         return;
       }
 
-      // Identifica o papel do usuário retornado pela API
+      // Identifica o papel retornado pela API
       const userRole = (data.usuario?.role || data.role || "").toUpperCase();
 
-      // Redirecionamento condicional de acordo com a função
+      // Redirecionamento condicional
       if (
         userRole === "ADMIN" ||
         userRole === "PROFESSOR" ||
         userRole === "TREINADOR" ||
         userRole === "COORDENADOR"
       ) {
-        // Painel operacional da comissão técnica
-        router.push("/presenca");
+        // Redireciona o administrador direto para a Dashboard principal (raiz)
+        router.push("/");
       } else {
-        // Área restrita de atletas e encarregados de educação / pais
+        // Área dos responsáveis/atletas
         router.push("/portal-pais");
       }
     } catch {
@@ -131,7 +131,7 @@ export default function LoginPage() {
             className="w-full mt-2 py-3 px-4 bg-orange-600 hover:bg-orange-500 active:scale-[0.98] text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-orange-600/30 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {carregando ? (
-              "A autenticar..."
+              "Carregando..."
             ) : (
               <>
                 <span>Entrar no Sistema</span>
