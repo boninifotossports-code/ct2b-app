@@ -33,20 +33,20 @@ export default function LoginPage() {
         return;
       }
 
-      // Identifica o papel retornado pela API
+      // Identifica o papel do utilizador retornado pela API
       const userRole = (data.usuario?.role || data.role || "").toUpperCase();
 
-      // Redirecionamento condicional
+      // Redirecionamento condicional de acordo com a função
       if (
         userRole === "ADMIN" ||
         userRole === "PROFESSOR" ||
         userRole === "TREINADOR" ||
         userRole === "COORDENADOR"
       ) {
-        // Redireciona o administrador direto para a Dashboard principal (raiz)
-        router.push("/");
+        // Redireciona a comissão técnica/administrador para o dashboard
+        router.push("/dashboard");
       } else {
-        // Área dos responsáveis/atletas
+        // Redireciona pais/responsáveis para o portal da família
         router.push("/portal-pais");
       }
     } catch {
@@ -92,7 +92,7 @@ export default function LoginPage() {
                 required
                 value={usuario}
                 onChange={(e) => setUsuario(e.target.value)}
-                placeholder="Nome de utilizador, email ou telefone"
+                placeholder="Nome de utilizador ou login"
                 className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 focus:border-orange-500 rounded-xl text-sm text-white placeholder-slate-600 outline-none transition-colors"
               />
             </div>
@@ -131,7 +131,7 @@ export default function LoginPage() {
             className="w-full mt-2 py-3 px-4 bg-orange-600 hover:bg-orange-500 active:scale-[0.98] text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-orange-600/30 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {carregando ? (
-              "Carregando..."
+              "A autenticar..."
             ) : (
               <>
                 <span>Entrar no Sistema</span>

@@ -23,9 +23,9 @@ export default function RootLayout({
         <NavbarPrincipal />
 
         {/* CONTEÚDO PRINCIPAL */}
-        <main className="flex-grow max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <main className="flex-grow w-full">
+  {children}
+</main>
 
         {/* RODAPÉ AB LABS */}
         <footer className="bg-gray-900 border-t border-gray-800 p-6 text-center mt-auto">

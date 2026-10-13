@@ -64,6 +64,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/cadastros"
+              prefetch={false}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-500 hover:text-orange-400 mt-4 transition-colors"
             >
               <span>Gerir elenco</span>
@@ -87,6 +88,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/presenca"
+              prefetch={false}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 mt-3 transition-colors"
             >
               <span>Realizar chamada</span>
@@ -125,10 +127,7 @@ export default function DashboardPage() {
         {/* ──────────────── Grid de Atalhos & Biblioteca Tática ──────────────── */}
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
-          {/* Coluna da Esquerda: Acesso Rápido e Planos Recentes */}
           <div className="lg:col-span-2 space-y-6">
-            
-            {/* Bloco: Acesso Rápido */}
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-1 h-4 bg-orange-500 rounded-full" />
@@ -140,6 +139,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Link
                   href="/treinos/novo"
+                  prefetch={false}
                   className="bg-[#0d1424] hover:bg-[#111a30] border border-slate-800/80 hover:border-orange-500/40 rounded-2xl p-4 flex items-center gap-4 transition-all group shadow-lg"
                 >
                   <div className="w-12 h-12 rounded-xl bg-slate-800/90 group-hover:bg-orange-600/20 text-orange-400 flex items-center justify-center transition-colors">
@@ -157,6 +157,7 @@ export default function DashboardPage() {
 
                 <Link
                   href="/presenca"
+                  prefetch={false}
                   className="bg-[#0d1424] hover:bg-[#111a30] border border-slate-800/80 hover:border-emerald-500/40 rounded-2xl p-4 flex items-center gap-4 transition-all group shadow-lg"
                 >
                   <div className="w-12 h-12 rounded-xl bg-slate-800/90 group-hover:bg-emerald-600/20 text-emerald-400 flex items-center justify-center transition-colors">
@@ -174,6 +175,7 @@ export default function DashboardPage() {
 
                 <Link
                   href="/treinos"
+                  prefetch={false}
                   className="bg-[#0d1424] hover:bg-[#111a30] border border-slate-800/80 hover:border-amber-500/40 rounded-2xl p-4 flex items-center gap-4 transition-all group shadow-lg"
                 >
                   <div className="w-12 h-12 rounded-xl bg-slate-800/90 group-hover:bg-amber-600/20 text-amber-400 flex items-center justify-center transition-colors">
@@ -191,6 +193,7 @@ export default function DashboardPage() {
 
                 <Link
                   href="/cadastros"
+                  prefetch={false}
                   className="bg-[#0d1424] hover:bg-[#111a30] border border-slate-800/80 hover:border-sky-500/40 rounded-2xl p-4 flex items-center gap-4 transition-all group shadow-lg"
                 >
                   <div className="w-12 h-12 rounded-xl bg-slate-800/90 group-hover:bg-sky-600/20 text-sky-400 flex items-center justify-center transition-colors">
@@ -208,7 +211,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Bloco: Planos Recentes */}
+            {/* Planos Recentes */}
             <div className="pt-2">
               <div className="flex items-center gap-2 mb-4">
                 <span className="w-1 h-4 bg-orange-500 rounded-full" />
@@ -239,6 +242,7 @@ export default function DashboardPage() {
 
                 <Link
                   href="/treinos"
+                  prefetch={false}
                   className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors shrink-0"
                 >
                   Ver Ficha
@@ -247,7 +251,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Coluna da Direita: Biblioteca de Táticas */}
+          {/* Biblioteca de Táticas */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <span className="w-1 h-4 bg-orange-500 rounded-full" />
@@ -281,6 +285,7 @@ export default function DashboardPage() {
 
               <Link
                 href="/treinos"
+                prefetch={false}
                 className="w-full py-3.5 px-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 active:scale-[0.98] text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
               >
                 <span>Aceder aos Treinos</span>
