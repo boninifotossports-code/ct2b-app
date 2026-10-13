@@ -2,35 +2,32 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
-// Função utilitária para hash de senha simples (caso utilize sha256)
 function hashSenha(senha: string) {
   return crypto.createHash("sha256").update(senha).digest("hex");
 }
 
 export async function POST(request: Request) {
   try {
-    const { usuario, email, senha } = await request.json();
-
-    const identificador = (usuario || email || "").trim();
+    const body = await request.json();
+    const identificador = (body.usuario || body.email || "").toString().trim();
+    const senha = (body.senha || "").toString();
 
     if (!identificador || !senha) {
       return NextResponse.json(
-        { error: "Informe as credenciais de acesso." },
+        { error: "Informe utilizador/email e palavra-passe." },
         { status: 400 }
       );
     }
 
-    // Busca o usuário pelo username, email ou telefone/documento
+    // Busca direta sem 'include' para não estourar erro se a relação não existir
+    // Procura por email ou username/nome
     const user = await prisma.usuario.findFirst({
       where: {
         OR: [
-          { email: identificador },
-          { usuario: identificador },
-          { telefone: identificador },
+          { email: { equals: identificador, mode: "insensitive" } },
+          // caso o campo no seu schema seja 'nome' ou 'usuario'
+          { nome: { equals: identificador, mode: "insensitive" } },
         ],
-      },
-      include: {
-        atleta: true,
       },
     });
 
@@ -41,27 +38,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validação de senha: testa texto puro ou hash SHA-256
-    const senhaValida =
+    // Validação flexível: texto puro ou SHA-256
+    const senhaCorreta =
       user.senha === senha || user.senha === hashSenha(senha);
 
-    if (!senhaValida) {
+    if (!senhaCorreta) {
       return NextResponse.json(
         { error: "Credenciais inválidas." },
         { status: 401 }
       );
     }
 
-    // Normaliza a role (maiúsculas)
-    const role = (user.role || "RESPONSAVEL").toUpperCase();
+    // Extrai o papel (role ou tipo) de forma segura
+    const anyUser = user as any;
+    const rawRole = anyUser.role || anyUser.tipo || anyUser.perfil || "ADMIN";
+    const role = String(rawRole).toUpperCase();
 
-    // Monta o payload seguro para resposta e sessão
     const dadosSessao = {
       id: user.id,
       nome: user.nome,
       email: user.email,
       role: role,
-      atletaId: user.atletaId || user.atleta?.id || null,
     };
 
     const response = NextResponse.json({
@@ -69,22 +66,21 @@ export async function POST(request: Request) {
       usuario: dadosSessao,
     });
 
-    // Define cookie de sessão HTTP-Only para controle do middleware
     response.cookies.set({
       name: "ct2b_session",
       value: JSON.stringify(dadosSessao),
-      httpOnly: false, // acessível no front ou client-side se necessário
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 dias
+      maxAge: 60 * 60 * 24 * 7,
       sameSite: "lax",
     });
 
     return response;
-  } catch (error) {
-    console.error("Erro no login:", error);
+  } catch (error: any) {
+    console.error("Erro detalhado no login:", error);
     return NextResponse.json(
-      { error: "Erro interno no servidor ao processar o login." },
+      { error: `Erro no servidor: ${error?.message || "Falha ao consultar banco"}` },
       { status: 500 }
     );
   }
