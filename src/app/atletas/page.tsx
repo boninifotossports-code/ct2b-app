@@ -1,101 +1,133 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  Users,
+  UserPlus,
+  Shield,
+  KeyRound,
+  CheckCircle2,
+  AlertCircle,
+  Phone,
+  User,
+  Sparkles,
+} from "lucide-react";
 
-export default function CadastrosPage() {
-  const [abaAtiva, setAbaAtiva] = useState<"atletas" | "usuarios">("atletas");
-  const [loading, setLoading] = useState(true);
+interface UsuarioItem {
+  id: string;
+  nome: string;
+  usuario: string;
+  role: string;
+  telefone?: string;
+  ativo?: boolean;
+}
 
-  // Dados da Base de Dados
-  const [atletas, setAtletas] = useState<any[]>([]);
-  const [usuarios, setUsuarios] = useState<any[]>([]);
+interface AtletaItem {
+  id: string;
+  nome: string;
+  categoria?: string;
+  posicao?: string;
+}
 
-  // Formulário: Atleta
+export default function AtletasECadastrosPage() {
+  const [abaAtiva, setAbaAtiva] = useState<"usuarios" | "atletas">("usuarios");
+
+  // Listagens
+  const [usuarios, setUsuarios] = useState<UsuarioItem[]>([]);
+  const [atletas, setAtletas] = useState<AtletaItem[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [mensagemSucesso, setMensagemSucesso] = useState("");
+  const [mensagemErro, setMensagemErro] = useState("");
+
+  // Formulário de Utilizador
+  const [nomeUsuario, setNomeUsuario] = useState("Breno Henrique");
+  const [loginUsuario, setLoginUsuario] = useState("breno");
+  const [senhaProvisoria, setSenhaProvisoria] = useState("123456789");
+  const [telefoneUsuario, setTelefoneUsuario] = useState("21999999999");
+  const [perfilUsuario, setPerfilUsuario] = useState("PROFESSOR");
+  const [salvandoUsuario, setSalvandoUsuario] = useState(false);
+
+  // Formulário de Atleta
   const [nomeAtleta, setNomeAtleta] = useState("");
-  const [nascimentoFormatado, setNascimentoFormatado] = useState("");
   const [categoriaAtleta, setCategoriaAtleta] = useState("Sub-9");
-  const [posicaoAtleta, setPosicaoAtleta] = useState("");
+  const [posicaoAtleta, setPosicaoAtleta] = useState("Goleiro");
   const [salvandoAtleta, setSalvandoAtleta] = useState(false);
 
-  // Formulário: Utilizador
-  const [nomeUser, setNomeUser] = useState("");
-  const [usuarioUser, setUsuarioUser] = useState("");
-  const [senhaUser, setSenhaUser] = useState("");
-  const [telefoneUser, setTelefoneUser] = useState("");
-  const [roleUser, setRoleUser] = useState("RESPONSAVEL");
-  const [atletasSelecionados, setAtletasSelecionados] = useState<string[]>([]);
-  const [salvandoUser, setSalvandoUser] = useState(false);
-
-  // Notificações
-  const [mensagem, setMensagem] = useState({ tipo: "", texto: "" });
-
-  const listaCategorias = [
-    "Sub-6", "Sub-7", "Sub-8", "Sub-9", "Sub-10",
-    "Sub-11", "Sub-12", "Sub-13", "Sub-14", "Sub-15",
-    "Sub-16", "Sub-17"
-  ];
-
-  const carregarTudo = async () => {
+  // Chamadas usando rotas relativas
+  const carregarDados = async () => {
     try {
-      setLoading(true);
-      const [resAtletas, resUsuarios] = await Promise.all([
-        fetch("/api/atletas"),
+      setCarregando(true);
+      setMensagemErro("");
+
+      const [resUsuarios, resAtletas] = await Promise.all([
         fetch("/api/usuarios"),
+        fetch("/api/atletas"),
       ]);
 
-      if (resAtletas.ok) {
-        const dataAtletas = await resAtletas.json();
-        setAtletas(dataAtletas);
+      if (resUsuarios.ok) {
+        const dadosU = await resUsuarios.json();
+        setUsuarios(Array.isArray(dadosU) ? dadosU : []);
       }
 
-      if (resUsuarios.ok) {
-        const dataUsuarios = await resUsuarios.json();
-        setUsuarios(dataUsuarios.usuarios || []);
+      if (resAtletas.ok) {
+        const dadosA = await resAtletas.json();
+        setAtletas(Array.isArray(dadosA) ? dadosA : []);
       }
-    } catch (err) {
-      console.error("Erro ao carregar dados:", err);
+    } catch {
+      setMensagemErro("Falha de comunicação com o servidor.");
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
   };
 
   useEffect(() => {
-    carregarTudo();
+    carregarDados();
   }, []);
 
-  // Máscara DD/MM/AAAA e cálculo dinâmico da Categoria
-  const handleDataNascimentoChange = (valor: string) => {
-    // Permite apenas dígitos
-    const apenasNumeros = valor.replace(/\D/g, "").slice(0, 8);
+  const handleCriarUsuario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMensagemSucesso("");
+    setMensagemErro("");
+    setSalvandoUsuario(true);
 
-    let formatado = apenasNumeros;
-    if (apenasNumeros.length > 2 && apenasNumeros.length <= 4) {
-      formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
-    } else if (apenasNumeros.length > 4) {
-      formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2, 4)}/${apenasNumeros.slice(4, 8)}`;
-    }
-    setNascimentoFormatado(formatado);
+    try {
+      const res = await fetch("/api/usuarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: nomeUsuario,
+          usuario: loginUsuario.toLowerCase().trim(),
+          senha: senhaProvisoria,
+          role: perfilUsuario,
+          telefone: telefoneUsuario,
+        }),
+      });
 
-    // Quando o ano estiver completo (8 dígitos inseridos)
-    if (apenasNumeros.length === 8) {
-      const anoNasc = parseInt(apenasNumeros.slice(4, 8), 10);
-      const anoAtual = new Date().getFullYear();
-      const idadeDesportiva = anoAtual - anoNasc;
+      const data = await res.json();
 
-      if (idadeDesportiva <= 6) {
-        setCategoriaAtleta("Sub-6");
-      } else if (idadeDesportiva >= 17) {
-        setCategoriaAtleta("Sub-17");
-      } else {
-        setCategoriaAtleta(`Sub-${idadeDesportiva}`);
+      if (!res.ok) {
+        setMensagemErro(data.error || "Não foi possível registar o utilizador.");
+        setSalvandoUsuario(false);
+        return;
       }
+
+      setMensagemSucesso(`Utilizador "${loginUsuario}" criado com sucesso!`);
+      setNomeUsuario("");
+      setLoginUsuario("");
+      setSenhaProvisoria("");
+      setTelefoneUsuario("");
+      carregarDados();
+    } catch {
+      setMensagemErro("Erro ao comunicar com a API de utilizadores.");
+    } finally {
+      setSalvandoUsuario(false);
     }
   };
 
-  // Submeter Novo Atleta
-  const handleCadastrarAtleta = async (e: React.FormEvent) => {
+  const handleCriarAtleta = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMensagem({ tipo: "", texto: "" });
+    setMensagemSucesso("");
+    setMensagemErro("");
     setSalvandoAtleta(true);
 
     try {
@@ -103,460 +135,366 @@ export default function CadastrosPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nomeCompleto: nomeAtleta,
+          nome: nomeAtleta,
           categoria: categoriaAtleta,
           posicao: posicaoAtleta,
-          dataNascimento: nascimentoFormatado,
         }),
       });
 
       const data = await res.json();
+
       if (!res.ok) {
-        setMensagem({ tipo: "erro", texto: data.error || "Erro ao salvar atleta." });
+        setMensagemErro(data.error || "Não foi possível registar o atleta.");
         setSalvandoAtleta(false);
         return;
       }
 
-      setMensagem({ tipo: "sucesso", texto: "Atleta cadastrado com sucesso!" });
+      setMensagemSucesso(`Atleta "${nomeAtleta}" registado com sucesso!`);
       setNomeAtleta("");
-      setNascimentoFormatado("");
-      setPosicaoAtleta("");
-      carregarTudo();
+      carregarDados();
     } catch {
-      setMensagem({ tipo: "erro", texto: "Falha de comunicação com o servidor." });
+      setMensagemErro("Erro ao comunicar com a API de atletas.");
     } finally {
       setSalvandoAtleta(false);
     }
   };
 
-  // Submeter Novo Utilizador
-  const handleCadastrarUsuario = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMensagem({ tipo: "", texto: "" });
-    setSalvandoUser(true);
-
-    try {
-      const res = await fetch("/api/usuarios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nome: nomeUser,
-          usuario: usuarioUser,
-          senhaInicial: senhaUser,
-          telefone: telefoneUser,
-          role: roleUser,
-          atletasIds: roleUser === "RESPONSAVEL" ? atletasSelecionados : [],
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setMensagem({ tipo: "erro", texto: data.error || "Erro ao cadastrar utilizador." });
-        setSalvandoUser(false);
-        return;
-      }
-
-      setMensagem({ tipo: "sucesso", texto: "Utilizador cadastrado com sucesso!" });
-      setNomeUser("");
-      setUsuarioUser("");
-      setSenhaUser("");
-      setTelefoneUser("");
-      setAtletasSelecionados([]);
-      carregarTudo();
-    } catch {
-      setMensagem({ tipo: "erro", texto: "Falha de comunicação com o servidor." });
-    } finally {
-      setSalvandoUser(false);
-    }
-  };
-
-  const toggleAtletaSelecao = (id: string) => {
-    setAtletasSelecionados((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
   return (
-    <div className="space-y-6 pb-16">
-      {/* Título Principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-white">Central de Cadastros</h1>
-          <p className="text-gray-400 text-sm mt-1">
-            Gestão técnica de atletas da base e controlo de acessos por perfil.
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col font-sans selection:bg-orange-600 selection:text-white">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8 space-y-8">
+        
+        {/* Cabeçalho */}
+        <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-800/80 pb-6">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+              Central de Cadastros
+            </h1>
+            <p className="text-xs md:text-sm text-slate-400 mt-1">
+              Gestão técnica de atletas da base e controlo de acessos por perfil.
+            </p>
+          </div>
 
-        {/* Abas */}
-        <div className="flex bg-gray-900 border border-gray-800 p-1 rounded-xl self-start">
-          <button
-            onClick={() => {
-              setAbaAtiva("atletas");
-              setMensagem({ tipo: "", texto: "" });
-            }}
-            className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-              abaAtiva === "atletas"
-                ? "bg-orange-600 text-white shadow-md"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            ⚽ Atletas ({atletas.length})
-          </button>
-          <button
-            onClick={() => {
-              setAbaAtiva("usuarios");
-              setMensagem({ tipo: "", texto: "" });
-            }}
-            className={`px-5 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-              abaAtiva === "usuarios"
-                ? "bg-orange-600 text-white shadow-md"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            👥 Utilizadores & Acessos ({usuarios.length})
-          </button>
-        </div>
-      </div>
+          {/* Abas Alternadoras */}
+          <div className="flex items-center gap-2 bg-[#0d1424] p-1.5 rounded-2xl border border-slate-800 self-start md:self-auto">
+            <button
+              onClick={() => {
+                setAbaAtiva("atletas");
+                setMensagemSucesso("");
+                setMensagemErro("");
+              }}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                abaAtiva === "atletas"
+                  ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg shadow-orange-600/20"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Atletas ({atletas.length})</span>
+            </button>
 
-      {/* Alertas */}
-      {mensagem.texto && (
-        <div
-          className={`p-3 rounded-xl text-xs font-semibold text-center border ${
-            mensagem.tipo === "sucesso"
-              ? "bg-green-500/10 border-green-500/30 text-green-400"
-              : "bg-red-500/10 border-red-500/30 text-red-400"
-          }`}
-        >
-          {mensagem.texto}
-        </div>
-      )}
+            <button
+              onClick={() => {
+                setAbaAtiva("usuarios");
+                setMensagemSucesso("");
+                setMensagemErro("");
+              }}
+              className={`px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+                abaAtiva === "usuarios"
+                  ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-lg shadow-orange-600/20"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              <span>Utilizadores & Acessos ({usuarios.length})</span>
+            </button>
+          </div>
+        </section>
 
-      {/* ======================================================== */}
-      {/* ABA 1: GESTÃO DE ATLETAS */}
-      {/* ======================================================== */}
-      {abaAtiva === "atletas" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Formulário Novo Atleta */}
-          <div className="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-3xl p-6 shadow-xl">
-            <h2 className="text-base font-bold text-white mb-4 border-l-4 border-orange-500 pl-3">
-              Cadastrar Novo Atleta
-            </h2>
+        {/* Notificações */}
+        {mensagemSucesso && (
+          <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{mensagemSucesso}</span>
+          </div>
+        )}
 
-            <form onSubmit={handleCadastrarAtleta} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                  Nome Completo
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={nomeAtleta}
-                  onChange={(e) => setNomeAtleta(e.target.value)}
-                  placeholder="Ex: Enzo Gabriel França Gomes"
-                  className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none"
-                />
+        {mensagemErro && (
+          <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{mensagemErro}</span>
+          </div>
+        )}
+
+        {/* ──────────────── Secção: Utilizadores ──────────────── */}
+        {abaAtiva === "usuarios" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1 bg-[#0d1424] border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-5">
+              <div className="flex items-center gap-2">
+                <span className="w-1 h-4 bg-orange-500 rounded-full" />
+                <h2 className="text-sm font-black uppercase tracking-wider text-white">
+                  Novo Acesso & Senha Provisória
+                </h2>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                  Data de Nascimento (DD/MM/AAAA)
-                </label>
-                <input
-                  type="text"
-                  required
-                  maxLength={10}
-                  value={nascimentoFormatado}
-                  onChange={(e) => handleDataNascimentoChange(e.target.value)}
-                  placeholder="DD/MM/AAAA"
-                  className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none placeholder-gray-600 font-mono"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleCriarUsuario} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Nome do Utilizador
+                  </label>
+                  <div className="relative">
+                    <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="text"
+                      required
+                      value={nomeUsuario}
+                      onChange={(e) => setNomeUsuario(e.target.value)}
+                      placeholder="Ex: Breno Henrique"
+                      className="w-full pl-10 pr-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Nome de Utilizador (Login Único)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={loginUsuario}
+                    onChange={(e) => setLoginUsuario(e.target.value)}
+                    placeholder="Ex: breno"
+                    className="w-full px-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Senha Provisória
+                  </label>
+                  <div className="relative">
+                    <KeyRound className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="text"
+                      required
+                      value={senhaProvisoria}
+                      onChange={(e) => setSenhaProvisoria(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                    />
+                  </div>
+                  <span className="block text-[10px] text-slate-500 mt-1">
+                    Será obrigado a alterar na tela de 1º acesso.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Telefone / WhatsApp
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="text"
+                      value={telefoneUsuario}
+                      onChange={(e) => setTelefoneUsuario(e.target.value)}
+                      placeholder="21999999999"
+                      className="w-full pl-10 pr-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Nível de Acesso
+                  </label>
+                  <select
+                    value={perfilUsuario}
+                    onChange={(e) => setPerfilUsuario(e.target.value)}
+                    className="w-full px-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white outline-none transition-colors cursor-pointer"
+                  >
+                    <option value="PROFESSOR">Professor / Comissão Técnica</option>
+                    <option value="ADMIN">Administrador (Total)</option>
+                    <option value="COORDENADOR">Coordenador</option>
+                    <option value="RESPONSAVEL">Responsável / Pais</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={salvandoUsuario}
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>{salvandoUsuario ? "A gravar..." : "Criar Acesso"}</span>
+                </button>
+              </form>
+            </div>
+
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="w-1 h-4 bg-orange-500 rounded-full" />
+                <h2 className="text-sm font-black uppercase tracking-wider text-white">
+                  Contas com Acesso Ativo ({usuarios.length})
+                </h2>
+              </div>
+
+              {carregando ? (
+                <div className="p-8 text-center text-xs text-slate-500 bg-[#0d1424] rounded-3xl border border-slate-800">
+                  A carregar dados...
+                </div>
+              ) : usuarios.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 bg-[#0d1424] rounded-3xl border border-slate-800">
+                  Nenhum utilizador registado além do administrador.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {usuarios.map((u) => (
+                    <div
+                      key={u.id}
+                      className="bg-[#0d1424] border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-lg hover:border-slate-700 transition-colors"
+                    >
+                      <div>
+                        <div className="text-xs font-bold text-white flex items-center gap-2">
+                          <span>{u.nome}</span>
+                          <span className="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-wider border border-orange-500/20">
+                            {u.role}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 font-mono">
+                          @{u.usuario}
+                        </div>
+                        {u.telefone && (
+                          <div className="text-[10px] text-slate-500 mt-0.5">
+                            {u.telefone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ──────────────── Secção: Atletas ──────────────── */}
+        {abaAtiva === "atletas" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-1 bg-[#0d1424] border border-slate-800/80 rounded-3xl p-6 shadow-xl space-y-5">
+              <div className="flex items-center gap-2">
+                <span className="w-1 h-4 bg-orange-500 rounded-full" />
+                <h2 className="text-sm font-black uppercase tracking-wider text-white">
+                  Registar Novo Atleta
+                </h2>
+              </div>
+
+              <form onSubmit={handleCriarAtleta} className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Nome Completo do Aluno
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={nomeAtleta}
+                    onChange={(e) => setNomeAtleta(e.target.value)}
+                    placeholder="Ex: Enzo Gabriel"
+                    className="w-full px-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white placeholder-slate-600 outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                     Categoria
                   </label>
                   <select
                     value={categoriaAtleta}
                     onChange={(e) => setCategoriaAtleta(e.target.value)}
-                    className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none"
+                    className="w-full px-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white outline-none transition-colors cursor-pointer"
                   >
-                    {listaCategorias.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
+                    <option value="Sub-7">Sub-7</option>
+                    <option value="Sub-9">Sub-9</option>
+                    <option value="Sub-10">Sub-10</option>
+                    <option value="Sub-11">Sub-11</option>
+                    <option value="Sub-13">Sub-13</option>
+                    <option value="Sub-15">Sub-15</option>
+                    <option value="Adulto / Fut 7">Adulto / Fut 7</option>
                   </select>
-                  <span className="text-[10px] text-gray-500 mt-0.5 block">
-                    Calculada automaticamente
-                  </span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                    Posição em Campo / Quadra
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                    Posição
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={posicaoAtleta}
                     onChange={(e) => setPosicaoAtleta(e.target.value)}
-                    placeholder="Ex: Goleiro, Fixo, Ala"
-                    className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none placeholder-gray-600"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={salvandoAtleta}
-                className="w-full bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 mt-2"
-              >
-                {salvandoAtleta ? "A guardar..." : "Registar Atleta"}
-              </button>
-            </form>
-          </div>
-
-          {/* Lista de Atletas */}
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-base font-bold text-white border-l-4 border-orange-500 pl-3">
-              Atletas Registados ({atletas.length})
-            </h2>
-
-            {loading ? (
-              <div className="p-8 text-center text-gray-500">A carregar atletas...</div>
-            ) : atletas.length === 0 ? (
-              <div className="bg-gray-900 border border-gray-800 rounded-3xl p-8 text-center text-gray-500">
-                Nenhum atleta cadastrado ainda.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {atletas.map((atleta) => (
-                  <div
-                    key={atleta.id}
-                    className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow hover:border-gray-700 transition-colors"
+                    className="w-full px-4 py-3 bg-[#070b14] border border-slate-800 focus:border-orange-500 rounded-xl text-xs text-white outline-none transition-colors cursor-pointer"
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                          {atleta.categoria}
-                        </span>
-                        <span className="text-xs text-gray-400 font-medium">
-                          {atleta.posicao || "Posição não definida"}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-white text-base">⚽ {atleta.nomeCompleto}</h3>
-                      {atleta.dataNascimento && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Nascimento: <span className="font-mono text-gray-400">{atleta.dataNascimento}</span>
-                        </p>
-                      )}
-                    </div>
+                    <option value="Goleiro">Goleiro</option>
+                    <option value="Fixo / Zagueiro">Fixo / Zagueiro</option>
+                    <option value="Ala Direita">Ala Direita</option>
+                    <option value="Ala Esquerda">Ala Esquerda</option>
+                    <option value="Meio-Campo">Meio-Campo</option>
+                    <option value="Pivô / Atacante">Pivô / Atacante</option>
+                  </select>
+                </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between text-xs">
-                      <span className="text-gray-500">Responsável:</span>
-                      {atleta.responsavel ? (
-                        <span className="text-green-400 font-semibold">
-                          👤 {atleta.responsavel.nome} ({atleta.responsavel.usuario})
-                        </span>
-                      ) : (
-                        <span className="text-yellow-500 font-semibold italic text-[11px]">
-                          Sem responsável vinculado
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* ABA 2: UTILIZADORES & ACESSOS */}
-      {/* ======================================================== */}
-      {abaAtiva === "usuarios" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-3xl p-6 shadow-xl">
-            <h2 className="text-base font-bold text-white mb-4 border-l-4 border-orange-500 pl-3">
-              Novo Acesso & Senha Provisória
-            </h2>
-
-            <form onSubmit={handleCadastrarUsuario} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                  Nome do Utilizador
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={nomeUser}
-                  onChange={(e) => setNomeUser(e.target.value)}
-                  placeholder="Ex: Carlos Gomes"
-                  className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                  Nome de Utilizador (Login Único)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={usuarioUser}
-                  onChange={(e) => setUsuarioUser(e.target.value)}
-                  placeholder="Ex: pai.carlos"
-                  className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                  Senha Provisória
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={senhaUser}
-                  onChange={(e) => setSenhaUser(e.target.value)}
-                  placeholder="Ex: 123456"
-                  className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none"
-                />
-                <span className="text-[10px] text-gray-500 block mt-0.5">
-                  Será obrigado a alterar na tela de 1º acesso.
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                  Telefone / WhatsApp
-                </label>
-                <input
-                  type="text"
-                  value={telefoneUser}
-                  onChange={(e) => setTelefoneUser(e.target.value)}
-                  placeholder="(21) 99999-9999"
-                  className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                  Nível de Acesso
-                </label>
-                <select
-                  value={roleUser}
-                  onChange={(e) => setRoleUser(e.target.value)}
-                  className="w-full bg-gray-950 border border-gray-800 focus:border-orange-500 rounded-xl px-3 py-2 text-sm text-gray-200 outline-none"
+                <button
+                  type="submit"
+                  disabled={salvandoAtleta}
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 active:scale-[0.98] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-orange-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <option value="RESPONSAVEL">Responsável / Pai</option>
-                  <option value="PROFESSOR">Professor / Comissão Técnica</option>
-                </select>
+                  <Sparkles className="w-4 h-4" />
+                  <span>{salvandoAtleta ? "A registar..." : "Registar Atleta"}</span>
+                </button>
+              </form>
+            </div>
+
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="w-1 h-4 bg-orange-500 rounded-full" />
+                <h2 className="text-sm font-black uppercase tracking-wider text-white">
+                  Elenco de Atletas ({atletas.length})
+                </h2>
               </div>
 
-              {roleUser === "RESPONSAVEL" && (
-                <div>
-                  <label className="block text-xs font-bold uppercase text-gray-400 mb-1">
-                    Vincular Atleta(s) a este Responsável
-                  </label>
-                  {atletas.length === 0 ? (
-                    <p className="text-xs text-yellow-500 italic p-2 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
-                      Cadastre atletas primeiro na aba ao lado para vincular aqui.
-                    </p>
-                  ) : (
-                    <div className="max-h-40 overflow-y-auto space-y-1 bg-gray-950 border border-gray-800 p-2 rounded-xl">
-                      {atletas.map((atleta) => (
-                        <label
-                          key={atleta.id}
-                          className="flex items-center gap-2 p-1.5 rounded hover:bg-gray-900 cursor-pointer text-xs"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={atletasSelecionados.includes(atleta.id)}
-                            onChange={() => toggleAtletaSelecao(atleta.id)}
-                            className="accent-orange-500"
-                          />
-                          <span className="text-gray-200">{atleta.nomeCompleto}</span>
-                          <span className="text-[10px] text-gray-500 ml-auto uppercase font-bold">
-                            {atleta.categoria}
+              {carregando ? (
+                <div className="p-8 text-center text-xs text-slate-500 bg-[#0d1424] rounded-3xl border border-slate-800">
+                  A carregar lista de atletas...
+                </div>
+              ) : atletas.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 bg-[#0d1424] rounded-3xl border border-slate-800">
+                  Nenhum atleta registado de momento.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {atletas.map((atleta) => (
+                    <div
+                      key={atleta.id}
+                      className="bg-[#0d1424] border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-lg hover:border-slate-700 transition-colors"
+                    >
+                      <div>
+                        <div className="text-xs font-bold text-white">
+                          {atleta.nome}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold border border-emerald-500/20">
+                            {atleta.categoria || "Geral"}
                           </span>
-                        </label>
-                      ))}
+                          <span className="text-slate-500">•</span>
+                          <span>{atleta.posicao || "Polivalente"}</span>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
-
-              <button
-                type="submit"
-                disabled={salvandoUser}
-                className="w-full bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50 mt-2"
-              >
-                {salvandoUser ? "A registar..." : "Registar Utilizador"}
-              </button>
-            </form>
+            </div>
           </div>
-
-          <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-base font-bold text-white border-l-4 border-orange-500 pl-3">
-              Contas com Acesso Ativo ({usuarios.length})
-            </h2>
-
-            {usuarios.map((u) => (
-              <div
-                key={u.id}
-                className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow hover:border-gray-700 transition-colors"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full ${
-                        u.role === "PROFESSOR"
-                          ? "bg-green-500/10 text-green-400 border border-green-500/20"
-                          : "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-                      }`}
-                    >
-                      {u.role}
-                    </span>
-                    {u.primeiroAcesso && (
-                      <span className="text-[9px] bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-2 py-0.5 rounded font-bold uppercase">
-                        Aguardando 1º Acesso
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-white text-base">{u.nome}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Login: <span className="text-gray-200 font-mono font-semibold">{u.usuario}</span>
-                  </p>
-                  {u.telefone && <p className="text-xs text-gray-500 mt-0.5">📞 {u.telefone}</p>}
-                </div>
-
-                {u.role === "RESPONSAVEL" && (
-                  <div className="mt-4 pt-3 border-t border-gray-800">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase">Filhos / Atletas Vinculados:</p>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {u.atletas && u.atletas.length > 0 ? (
-                        u.atletas.map((at: any) => (
-                          <span
-                            key={at.id}
-                            className="bg-gray-800 text-gray-200 text-[11px] px-2 py-0.5 rounded-lg border border-gray-700 font-medium"
-                          >
-                            ⚽ {at.nomeCompleto}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-xs text-gray-600 italic">Nenhum atleta vinculado</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </main>
     </div>
   );
 }
